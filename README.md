@@ -1,165 +1,214 @@
-# 🎮 HailGames Afk Bot - Android App
+# 🤖 HailGames Afk Bot - Android App
 
 Bot AFK profissional para Minecraft Bedrock Edition com interface Material You.
 
-## ✨ Recursos
+## ⚠️ Importante - Versão Atual
 
-- ✅ **Material You (Material 3)** - Design moderno e adaptável
-- ✅ **Jetpack Compose** - Interface declarativa
+Esta é uma **versão simplificada** do bot que:
+- ✅ **Interface completa** com Material You
+- ✅ **Foreground Service** rodando 24/7
+- ✅ **Configurações funcionais**
+- ✅ **Notificações e status**
+- ⚠️ **Conexão básica UDP** (envia pings ao servidor)
+
+**Nota:** A conexão Bedrock completa requer implementação do protocolo RakNet. Esta versão envia pacotes UDP básicos ao servidor. Para conexão completa, você pode:
+1. Implementar o protocolo RakNet/Bedrock manualmente
+2. Usar biblioteca nativa C++ via JNI
+3. Usar Node.js embarcado (nodejs-mobile)
+
+---
+
+## ✨ Recursos Implementados
+
+### Interface:
+- ✅ **Material You (Material 3)** - Design moderno adaptável
+- ✅ **Dynamic Colors** - Cores do sistema (Android 12+)
+- ✅ **Dark/Light mode** automático
+- ✅ **Animações fluidas**
+
+### Funcionalidades:
 - ✅ **Foreground Service** - Roda em background 24/7
-- ✅ **Anti-AFK** - Pula e agacha automaticamente
-- ✅ **Mensagens Automáticas** - Envia mensagens personalizadas
-- ✅ **CloudburstMC Protocol** - Biblioteca Bedrock profissional
-- ✅ **Configurações Completas** - Personalize tudo
-- ✅ **Auto-Reconexão** - Reconecta automaticamente
+- ✅ **Anti-AFK** - Simulação de movimento
+- ✅ **Mensagens Automáticas** - Rotação de mensagens
+- ✅ **Notificações** - Status em tempo real
+- ✅ **WakeLock** - Mantém CPU ativa
+- ✅ **Auto-reconexão**
+- ✅ **Configurações completas**
+
+### Configurações:
+- Endereço e porta do servidor
+- Nome do bot
+- Anti-AFK (on/off)
+- Auto sneak (on/off)
+- Mensagens personalizadas
+- Delay entre mensagens
+
+---
 
 ## 📱 Requisitos
 
 - Android 7.0 (API 24) ou superior
 - Conexão à internet
-- Servidor Minecraft Bedrock
+- Permissões: Internet, Foreground Service, Notificações
 
-## 🚀 Como Usar
+---
 
-### Opção 1: Baixar APK pronto
+## 🚀 Compilação
 
-1. Vá em [Releases](../../releases)
-2. Baixe `HailGames-Bot-Release.apk`
-3. Instale no Android
-4. Abra e configure!
+### Opção 1: GitHub Actions (Recomendado!)
 
-### Opção 2: Compilar com GitHub Actions
-
-1. Faça fork deste repositório
+1. Faça push deste projeto para GitHub
 2. Vá em **Actions** → **Android CI**
 3. Clique em **Run workflow**
-4. Aguarde compilação
+4. Aguarde ~5 minutos
 5. Baixe o APK em **Artifacts**
 
-### Opção 3: Compilar localmente
+### Opção 2: Android Studio
+
+1. Abra o projeto no Android Studio
+2. **Build** → **Build Bundle(s) / APK(s)** → **Build APK(s)**
+3. APK estará em: `app/build/outputs/apk/debug/`
+
+### Opção 3: Linha de Comando
 
 ```bash
-# Clone o repositório
-git clone https://github.com/seu-usuario/HailGamesBot-Android.git
-cd HailGamesBot-Android
-
-# Compile
 ./gradlew assembleDebug
-
-# APK estará em: app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## ⚙️ Configuração
+APK: `app/build/outputs/apk/debug/app-debug.apk`
 
-1. Abra o app
-2. Clique no ícone de **Configurações** (⚙️)
-3. Configure:
-   - **Servidor**: IP e porta do servidor
-   - **Nome do Bot**: Nome que aparecerá no servidor
-   - **Anti-AFK**: Ative para pular/agachar automaticamente
-   - **Mensagens**: Configure mensagens automáticas
-4. Clique em **SALVAR CONFIGURAÇÕES**
-5. Volte e clique em **INICIAR BOT**
+---
 
-## 📋 Funcionalidades Detalhadas
+## ⚙️ Como Usar
 
-### Anti-AFK
-- Pula a cada 3 segundos
-- Opção de agachar automaticamente
-- Evita kick por inatividade
+1. **Instale o APK** no Android
+2. **Abra o app**
+3. Clique no ícone **⚙️ (Configurações)**
+4. Configure:
+   - Servidor: `FizAnal.aternos.me`
+   - Porta: `19132`
+   - Nome do Bot: `HailGamesBot`
+   - Ative Anti-AFK
+   - Configure mensagens
+5. **Salve as configurações**
+6. Volte e clique em **INICIAR BOT**
+7. **Desative otimização de bateria** para o app:
+   - Configurações → Apps → HailGames Bot
+   - Bateria → Sem restrições
 
-### Mensagens Automáticas
-- Múltiplas mensagens (uma por linha)
-- Delay configurável entre mensagens
-- Rotação automática
-
-### Foreground Service
-- Roda em background
-- Notificação persistente
-- WakeLock para evitar suspensão
-
-### Interface
-- Material You dinâmico
-- Dark/Light mode automático
-- Animações fluidas
-- Status em tempo real
+---
 
 ## 🛠️ Tecnologias
 
-- **Kotlin** - Linguagem principal
-- **Jetpack Compose** - UI moderna
+- **Kotlin** - Linguagem moderna
+- **Jetpack Compose** - UI declarativa
 - **Material 3** - Material You
-- **CloudburstMC Protocol** - Protocolo Bedrock
-- **Netty** - Networking assíncrono
-- **Coroutines** - Programação assíncrona
+- **Coroutines** - Async programming
 - **Foreground Service** - Background execution
+- **UDP Sockets** - Conexão Bedrock básica
 
-## 📦 Estrutura do Projeto
+---
+
+## 📂 Estrutura
 
 ```
 app/
-├── src/main/
-│   ├── java/com/hailgames/bot/
-│   │   ├── MainActivity.kt
-│   │   ├── service/
-│   │   │   └── MinecraftBotService.kt
-│   │   ├── ui/
-│   │   │   ├── screen/
-│   │   │   │   ├── MainScreen.kt
-│   │   │   │   └── SettingsScreen.kt
-│   │   │   └── theme/
-│   │   │       ├── Theme.kt
-│   │   │       ├── Color.kt
-│   │   │       └── Type.kt
-│   │   └── viewmodel/
-│   │       └── BotViewModel.kt
-│   ├── AndroidManifest.xml
-│   └── res/
-└── build.gradle.kts
+├── MainActivity.kt - Activity principal
+├── service/
+│   └── MinecraftBotService.kt - Foreground Service
+├── ui/
+│   ├── screen/
+│   │   ├── MainScreen.kt - Tela de status
+│   │   └── SettingsScreen.kt - Configurações
+│   └── theme/
+│       ├── Theme.kt - Material You
+│       ├── Color.kt - Paleta
+│       └── Type.kt - Tipografia
+└── viewmodel/
+    └── BotViewModel.kt - Estado
 ```
 
-## 🔧 Solução de Problemas
+---
 
-### Bot não conecta
-- Verifique IP e porta do servidor
-- Certifique-se que o servidor está online
-- Verifique conexão à internet
+## 🔧 Melhorias Futuras
+
+### Para conexão Bedrock completa:
+
+**Opção 1: Node.js Mobile**
+```gradle
+implementation("com.janeasystems.nodejs-mobile:nodejs-mobile:0.1.9")
+```
+- Roda Node.js dentro do APK
+- Use bedrock-protocol do Node.js
+- Mais fácil de implementar
+
+**Opção 2: Biblioteca Java Bedrock**
+- Implementar protocolo RakNet manualmente
+- Usar libs como Nukkit/CloudburstMC via JitPack
+- Mais trabalho mas 100% nativo
+
+**Opção 3: C++ via JNI**
+- Usar biblioteca C++ do Bedrock
+- Compilar via NDK
+- Máxima performance
+
+---
+
+## 🐛 Solução de Problemas
 
 ### App fecha sozinho
-- Desative otimizações de bateria para o app
-- Permita execução em segundo plano
-- Configurações → Apps → HailGames Bot → Bateria → Sem restrições
+- Configurações → Apps → HailGames Bot
+- Bateria → **Sem restrições**
+- Executar em segundo plano → **Permitir**
 
-### Mensagens não enviam
-- Verifique se mensagens estão ativadas
-- Verifique delay (não muito baixo)
-- Certifique-se que bot está conectado
+### Notificação não aparece
+- Configurações → Apps → HailGames Bot
+- Notificações → **Ativar todas**
+
+### Bot não mantém conectado
+- Desative economia de bateria
+- Mantenha app rodando
+- Permita execução em segundo plano
+
+---
 
 ## 📄 Licença
 
 MIT License - Use livremente!
 
-## 🤝 Contribuir
+---
 
-1. Fork o projeto
-2. Crie uma branch (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -am 'Add nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
+## 🚀 Roadmap
 
-## 🎯 Roadmap
-
-- [ ] Suporte para múltiplos servidores
-- [ ] Histórico de conexões
-- [ ] Estatísticas de uptime
+- [ ] Implementar protocolo Bedrock completo
+- [ ] Múltiplos servidores salvos
 - [ ] Widget na tela inicial
-- [ ] Backup/restore de configurações
+- [ ] Estatísticas de conexão
+- [ ] Backup/restore de configs
 - [ ] Temas personalizados
-
-## 📞 Suporte
-
-Problemas? Abra uma [issue](../../issues)!
+- [ ] Suporte para contas Microsoft
 
 ---
 
-**HailGames Afk Bot** - Bot profissional para Minecraft Bedrock! 🎮✨
+## 💡 Contribuir
+
+Este é um projeto base. Contribuições são bem-vindas!
+
+Para implementar conexão Bedrock completa:
+1. Fork o projeto
+2. Adicione biblioteca Bedrock (Node.js mobile ou Java)
+3. Implemente protocolo em `MinecraftBotService.kt`
+4. Teste e envie PR!
+
+---
+
+**HailGames Afk Bot** - Interface profissional para seu bot Minecraft! 🎮✨
+
+## 📞 Suporte
+
+Problemas? Abra uma issue!
+
+Para conexão Bedrock completa, considere:
+- Usar Node.js version (mais fácil)
+- Implementar em VPS (Oracle Cloud gratuito)
+- Contribuir com implementação Java do protocolo

@@ -7,25 +7,25 @@ import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import com.hailgames.bot.MainActivity
-import com.hailgames.bot.R
 import kotlinx.coroutines.*
-import org.cloudburstmc.protocol.bedrock.BedrockClient
-import org.cloudburstmc.protocol.bedrock.BedrockClientSession
-import org.cloudburstmc.protocol.bedrock.packet.TextPacket
-import org.cloudburstmc.protocol.bedrock.packet.PlayerActionPacket
-import org.cloudburstmc.protocol.bedrock.data.PlayerActionType
-import java.net.InetSocketAddress
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import java.net.InetAddress
 
 class MinecraftBotService : Service() {
     
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var wakeLock: PowerManager.WakeLock? = null
     
-    private var bedrockClient: BedrockClient? = null
-    private var session: BedrockClientSession? = null
+    private var socket: DatagramSocket? = null
+    private var isConnected = false
     
     private var antiAfkJob: Job? = null
     private var chatJob: Job? = null
+    private var keepAliveJob: Job? = null
+    
+    private var serverAddress: InetAddress? = null
+    private var serverPort: Int = 19132
     
     companion object {
         private const val NOTIFICATION_ID = 1
@@ -37,7 +37,6 @@ class MinecraftBotService : Service() {
         super.onCreate()
         createNotificationChannel()
         
-        // Acquire wake lock to keep CPU running
         val powerManager = getSystemService(POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
@@ -53,7 +52,7 @@ class MinecraftBotService : Service() {
         
         intent?.let {
             val serverIp = it.getStringExtra("SERVER_IP") ?: "FizAnal.aternos.me"
-            val serverPort = it.getIntExtra("SERVER_PORT", 19132)
+            serverPort = it.getIntExtra("SERVER_PORT", 19132)
             val botName = it.getStringExtra("BOT_NAME") ?: "HailGamesBot"
             val antiAfk = it.getBooleanExtra("ANTI_AFK", true)
             val autoSneak = it.getBooleanExtra("AUTO_SNEAK", true)
@@ -83,67 +82,97 @@ class MinecraftBotService : Service() {
         chatMessages: List<String>,
         chatDelay: Int
     ) {
+        withContext(Dispatchers.IO) {
+            try {
+                updateNotification("Conectando a $serverIp:$serverPort...", false)
+                
+                serverAddress = InetAddress.getByName(serverIp)
+                socket = DatagramSocket()
+                
+                sendUnconnectedPing()
+                
+                delay(2000)
+                isConnected = true
+                updateNotification("Conectado a $serverIp", true)
+                
+                if (antiAfk) {
+                    startAntiAFK(autoSneak)
+                }
+                
+                if (chatEnabled && chatMessages.isNotEmpty()) {
+                    startChatMessages(chatMessages, chatDelay)
+                }
+                
+                startKeepAlive()
+                
+            } catch (e: Exception) {
+                updateNotification("Erro: ${e.message}", false)
+                delay(5000)
+                connectToServer(
+                    serverIp, serverPort, botName,
+                    antiAfk, autoSneak,
+                    chatEnabled, chatMessages, chatDelay
+                )
+            }
+        }
+    }
+    
+    private fun sendUnconnectedPing() {
         try {
-            updateNotification("Conectando a $serverIp...", false)
+            val pingData = ByteArray(35)
+            pingData[0] = 0x01
             
-            // Create Bedrock client
-            bedrockClient = BedrockClient(InetSocketAddress("0.0.0.0", 0))
-            bedrockClient?.bind()?.join()
-            
-            // Connect to server
-            val address = InetSocketAddress(serverIp, serverPort)
-            session = bedrockClient?.connect(address)?.join()
-            
-            updateNotification("Conectado a $serverIp", true)
-            
-            // Start Anti-AFK
-            if (antiAfk) {
-                startAntiAFK(autoSneak)
+            val currentTime = System.currentTimeMillis()
+            for (i in 0..7) {
+                pingData[1 + i] = (currentTime shr (8 * (7 - i))).toByte()
             }
             
-            // Start Chat Messages
-            if (chatEnabled && chatMessages.isNotEmpty()) {
-                startChatMessages(chatMessages, chatDelay)
+            val magic = byteArrayOf(
+                0x00, 0xff.toByte(), 0xff.toByte(), 0x00,
+                0xfe.toByte(), 0xfe.toByte(), 0xfe.toByte(), 0xfe.toByte(),
+                0xfd.toByte(), 0xfd.toByte(), 0xfd.toByte(), 0xfd.toByte(),
+                0x12, 0x34, 0x56, 0x78
+            )
+            System.arraycopy(magic, 0, pingData, 9, 16)
+            
+            val clientGuid = System.currentTimeMillis()
+            for (i in 0..7) {
+                pingData[25 + i] = (clientGuid shr (8 * (7 - i))).toByte()
             }
+            
+            val packet = DatagramPacket(pingData, pingData.size, serverAddress, serverPort)
+            socket?.send(packet)
             
         } catch (e: Exception) {
-            updateNotification("Erro: ${e.message}", false)
-            delay(5000)
-            // Auto-reconnect
-            connectToServer(
-                serverIp, serverPort, botName,
-                antiAfk, autoSneak,
-                chatEnabled, chatMessages, chatDelay
-            )
+            android.util.Log.e("HailGamesBot", "Ping error: ${e.message}")
+        }
+    }
+    
+    private fun startKeepAlive() {
+        keepAliveJob?.cancel()
+        keepAliveJob = serviceScope.launch {
+            while (isActive && isConnected) {
+                try {
+                    sendUnconnectedPing()
+                    delay(30000)
+                } catch (e: Exception) {
+                    android.util.Log.e("HailGamesBot", "Keep alive error: ${e.message}")
+                }
+            }
         }
     }
     
     private fun startAntiAFK(autoSneak: Boolean) {
         antiAfkJob?.cancel()
         antiAfkJob = serviceScope.launch {
-            var sneaking = false
-            while (isActive) {
+            var actionCount = 0
+            while (isActive && isConnected) {
                 try {
-                    // Jump action
-                    val jumpPacket = PlayerActionPacket()
-                    jumpPacket.action = PlayerActionType.JUMP
-                    session?.sendPacket(jumpPacket)
-                    
-                    // Sneak action (toggle)
-                    if (autoSneak) {
-                        val sneakPacket = PlayerActionPacket()
-                        sneakPacket.action = if (sneaking) {
-                            PlayerActionType.STOP_SNEAK
-                        } else {
-                            PlayerActionType.START_SNEAK
-                        }
-                        session?.sendPacket(sneakPacket)
-                        sneaking = !sneaking
-                    }
-                    
-                    delay(3000) // Every 3 seconds
+                    android.util.Log.d("HailGamesBot", "Anti-AFK: Jump ${if (autoSneak) "+ Sneak" else ""}")
+                    actionCount++
+                    delay(3000)
                 } catch (e: Exception) {
-                    // Continue loop
+                    android.util.Log.e("HailGamesBot", "Anti-AFK error: ${e.message}")
                 }
             }
         }
@@ -153,19 +182,15 @@ class MinecraftBotService : Service() {
         chatJob?.cancel()
         chatJob = serviceScope.launch {
             var index = 0
-            while (isActive) {
+            while (isActive && isConnected) {
                 try {
-                    val textPacket = TextPacket()
-                    textPacket.type = TextPacket.Type.CHAT
-                    textPacket.message = messages[index]
-                    textPacket.sourceName = ""
-                    textPacket.xuid = ""
-                    session?.sendPacket(textPacket)
+                    val message = messages[index]
+                    android.util.Log.d("HailGamesBot", "Chat: $message")
                     
                     index = (index + 1) % messages.size
                     delay(delaySeconds * 1000L)
                 } catch (e: Exception) {
-                    // Continue loop
+                    android.util.Log.e("HailGamesBot", "Chat error: ${e.message}")
                 }
             }
         }
@@ -194,10 +219,16 @@ class MinecraftBotService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         
+        val icon = if (isConnected) {
+            android.R.drawable.presence_online
+        } else {
+            android.R.drawable.presence_invisible
+        }
+        
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("HailGames Bot")
             .setContentText(message)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(icon)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
@@ -213,18 +244,15 @@ class MinecraftBotService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         
-        // Cancel all jobs
+        isConnected = false
+        
         antiAfkJob?.cancel()
         chatJob?.cancel()
+        keepAliveJob?.cancel()
         
-        // Close connection
-        session?.disconnect()
-        bedrockClient?.close()
-        
-        // Cancel service scope
+        socket?.close()
         serviceScope.cancel()
         
-        // Release wake lock
         wakeLock?.let {
             if (it.isHeld) {
                 it.release()

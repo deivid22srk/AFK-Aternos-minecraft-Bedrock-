@@ -23,7 +23,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -45,8 +45,6 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            excludes += "META-INF/INDEX.LIST"
-            excludes += "META-INF/io.netty.versions.properties"
         }
     }
 }
@@ -79,14 +77,8 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     
-    // CloudburstMC Bedrock Protocol
-    implementation("org.cloudburstmc.protocol:bedrock-connection:3.0.0.Beta1-SNAPSHOT")
-    implementation("org.cloudburstmc.protocol:bedrock-codec:3.0.0.Beta1-SNAPSHOT")
-    
-    // Netty (networking)
-    implementation("io.netty:netty-handler:4.1.100.Final")
-    implementation("io.netty:netty-codec:4.1.100.Final")
-    implementation("io.netty:netty-transport:4.1.100.Final")
+    // OkHttp for WebSocket (Bedrock alternative)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     
     // Debug
     debugImplementation("androidx.compose.ui:ui-tooling")
