@@ -2,9 +2,9 @@ name: Android CI
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "main" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main", "main" ]
   workflow_dispatch:
 
 jobs:
@@ -28,8 +28,8 @@ jobs:
     - name: Build Debug APK
       run: ./gradlew assembleDebug
 
- #   - name: Build Release APK
-  #    run: ./gradlew assembleRelease
+    - name: Build Release APK
+     run: ./gradlew assembleRelease
 
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
@@ -37,8 +37,8 @@ jobs:
         name: HailGames-Bot-Debug
         path: ./app/build/outputs/apk/debug/app-debug.apk
 
-#    - name: Upload Release APK
-  #    uses: actions/upload-artifact@v4
+    - name: Upload Release APK
+     uses: actions/upload-artifact@v4
       with:
         name: HailGames-Bot-Release
         path: ./app/build/outputs/apk/release/app-release.apk
