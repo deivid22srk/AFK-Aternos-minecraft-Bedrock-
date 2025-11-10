@@ -1,96 +1,67 @@
-const mineflayer = require('mineflayer');
-const Movements = require('mineflayer-pathfinder').Movements;
-const pathfinder = require('mineflayer-pathfinder').pathfinder;
-const { GoalBlock } = require('mineflayer-pathfinder').goals;
-
-const config = require('./settings.json');
+const bedrock = require('bedrock-protocol');
 const express = require('express');
+const config = require('./settings.json');
 
 const app = express();
 
 app.get('/', (req, res) => {
-  res.send('Bot has arrived');
+  res.send('HailGames Afk Bot is running');
 });
 
 app.listen(8000, () => {
-  console.log('Server started');
+  console.log('Server started on port 8000');
 });
 
 function createBot() {
-   const bot = mineflayer.createBot({
-      username: config['bot-account']['username'],
-      password: config['bot-account']['password'],
-      auth: config['bot-account']['type'],
+   console.log('\x1b[36m[HailGames] Starting bot connection...\x1b[0m');
+   
+   const client = bedrock.createClient({
       host: config.server.ip,
       port: config.server.port,
+      username: config['bot-account']['username'],
+      offline: config['bot-account']['type'] === 'offline',
       version: config.server.version,
+      profilesFolder: './profiles',
+      skipPing: false
    });
 
-   bot.loadPlugin(pathfinder);
-   const mcData = require('minecraft-data')(bot.version);
-   const defaultMove = new Movements(bot, mcData);
-   bot.settings.colorsEnabled = false;
+   let isSpawned = false;
+   let messageIndex = 0;
+   let messageTimer = null;
+   let antiAFKTimer = null;
+   let jumpState = false;
 
-   let pendingPromise = Promise.resolve();
-
-   function sendRegister(password) {
-      return new Promise((resolve, reject) => {
-         bot.chat(`/register ${password} ${password}`);
-         console.log(`[Auth] Sent /register command.`);
-
-         bot.once('chat', (username, message) => {
-            console.log(`[ChatLog] <${username}> ${message}`); // Log all chat messages
-
-            // Check for various possible responses
-            if (message.includes('successfully registered')) {
-               console.log('[INFO] Registration confirmed.');
-               resolve();
-            } else if (message.includes('already registered')) {
-               console.log('[INFO] Bot was already registered.');
-               resolve(); // Resolve if already registered
-            } else if (message.includes('Invalid command')) {
-               reject(`Registration failed: Invalid command. Message: "${message}"`);
-            } else {
-               reject(`Registration failed: unexpected message "${message}".`);
-            }
-         });
-      });
-   }
-
-   function sendLogin(password) {
-      return new Promise((resolve, reject) => {
-         bot.chat(`/login ${password}`);
-         console.log(`[Auth] Sent /login command.`);
-
-         bot.once('chat', (username, message) => {
-            console.log(`[ChatLog] <${username}> ${message}`); // Log all chat messages
-
-            if (message.includes('successfully logged in')) {
-               console.log('[INFO] Login successful.');
-               resolve();
-            } else if (message.includes('Invalid password')) {
-               reject(`Login failed: Invalid password. Message: "${message}"`);
-            } else if (message.includes('not registered')) {
-               reject(`Login failed: Not registered. Message: "${message}"`);
-            } else {
-               reject(`Login failed: unexpected message "${message}".`);
-            }
-         });
-      });
-   }
-
-   bot.once('spawn', () => {
-      console.log('\x1b[33m[AfkBot] Bot joined the server', '\x1b[0m');
+   client.on('join', () => {
+      console.log('\x1b[33m[HailGames Afk Bot] Bot joined the server!\x1b[0m');
+      isSpawned = true;
 
       if (config.utils['auto-auth'].enabled) {
          console.log('[INFO] Started auto-auth module');
-
          const password = config.utils['auto-auth'].password;
+         
+         setTimeout(() => {
+            client.queue('text', {
+               type: 'chat',
+               needs_translation: false,
+               source_name: config['bot-account']['username'],
+               message: `/register ${password} ${password}`,
+               xuid: '',
+               platform_chat_id: ''
+            });
+            console.log(`[Auth] Sent /register command.`);
+         }, 2000);
 
-         pendingPromise = pendingPromise
-            .then(() => sendRegister(password))
-            .then(() => sendLogin(password))
-            .catch(error => console.error('[ERROR]', error));
+         setTimeout(() => {
+            client.queue('text', {
+               type: 'chat',
+               needs_translation: false,
+               source_name: config['bot-account']['username'],
+               message: `/login ${password}`,
+               xuid: '',
+               platform_chat_id: ''
+            });
+            console.log(`[Auth] Sent /login command.`);
+         }, 3000);
       }
 
       if (config.utils['chat-messages'].enabled) {
@@ -99,74 +70,132 @@ function createBot() {
 
          if (config.utils['chat-messages'].repeat) {
             const delay = config.utils['chat-messages']['repeat-delay'];
-            let i = 0;
-
-            let msg_timer = setInterval(() => {
-               bot.chat(`${messages[i]}`);
-
-               if (i + 1 === messages.length) {
-                  i = 0;
-               } else {
-                  i++;
+            
+            messageTimer = setInterval(() => {
+               if (isSpawned && client) {
+                  client.queue('text', {
+                     type: 'chat',
+                     needs_translation: false,
+                     source_name: config['bot-account']['username'],
+                     message: messages[messageIndex],
+                     xuid: '',
+                     platform_chat_id: ''
+                  });
+                  
+                  console.log(`[Chat] Sent: ${messages[messageIndex]}`);
+                  
+                  messageIndex = (messageIndex + 1) % messages.length;
                }
             }, delay * 1000);
          } else {
-            messages.forEach((msg) => {
-               bot.chat(msg);
-            });
+            setTimeout(() => {
+               messages.forEach((msg, index) => {
+                  setTimeout(() => {
+                     if (isSpawned && client) {
+                        client.queue('text', {
+                           type: 'chat',
+                           needs_translation: false,
+                           source_name: config['bot-account']['username'],
+                           message: msg,
+                           xuid: '',
+                           platform_chat_id: ''
+                        });
+                        console.log(`[Chat] Sent: ${msg}`);
+                     }
+                  }, index * 1000);
+               });
+            }, 2000);
          }
-      }
-
-      const pos = config.position;
-
-      if (config.position.enabled) {
-         console.log(
-            `\x1b[32m[Afk Bot] Starting to move to target location (${pos.x}, ${pos.y}, ${pos.z})\x1b[0m`
-         );
-         bot.pathfinder.setMovements(defaultMove);
-         bot.pathfinder.setGoal(new GoalBlock(pos.x, pos.y, pos.z));
       }
 
       if (config.utils['anti-afk'].enabled) {
-         bot.setControlState('jump', true);
-         if (config.utils['anti-afk'].sneak) {
-            bot.setControlState('sneak', true);
+         console.log('[INFO] Started anti-afk module');
+         
+         antiAFKTimer = setInterval(() => {
+            if (isSpawned && client) {
+               jumpState = !jumpState;
+               
+               client.queue('player_action', {
+                  action: jumpState ? 'jump' : 'start_swimming',
+                  action_type: 0
+               });
+
+               if (config.utils['anti-afk'].sneak) {
+                  client.queue('player_action', {
+                     action: jumpState ? 'start_sneak' : 'stop_sneak',
+                     action_type: 0
+                  });
+               }
+            }
+         }, 3000);
+      }
+
+      if (config.position.enabled) {
+         console.log(
+            `\x1b[32m[HailGames Afk Bot] Moving to target location (${config.position.x}, ${config.position.y}, ${config.position.z})\x1b[0m`
+         );
+      }
+   });
+
+   client.on('text', (packet) => {
+      if (config.utils['chat-log']) {
+         try {
+            const message = packet.message || '';
+            console.log(`[ChatLog] ${message}`);
+         } catch (err) {
+            console.log(`[ChatLog] Received text packet`);
          }
       }
    });
 
-   bot.on('goal_reached', () => {
+   client.on('disconnect', (packet) => {
+      isSpawned = false;
+      
+      if (messageTimer) clearInterval(messageTimer);
+      if (antiAFKTimer) clearInterval(antiAFKTimer);
+      
+      const reason = packet.message || 'Unknown reason';
       console.log(
-         `\x1b[32m[AfkBot] Bot arrived at the target location. ${bot.entity.position}\x1b[0m`
-      );
-   });
-
-   bot.on('death', () => {
-      console.log(
-         `\x1b[33m[AfkBot] Bot has died and was respawned at ${bot.entity.position}`,
+         '\x1b[33m',
+         `[HailGames Afk Bot] Disconnected from server. Reason: ${reason}`,
          '\x1b[0m'
       );
-   });
 
-   if (config.utils['auto-reconnect']) {
-      bot.on('end', () => {
+      if (config.utils['auto-reconnect']) {
+         console.log(`[INFO] Reconnecting in ${config.utils['auto-recconect-delay'] / 1000} seconds...`);
          setTimeout(() => {
             createBot();
          }, config.utils['auto-recconect-delay']);
-      });
-   }
+      }
+   });
 
-   bot.on('kicked', (reason) =>
+   client.on('error', (err) => {
+      console.log(`\x1b[31m[ERROR] ${err.message}\x1b[0m`);
+      
+      if (config.utils['auto-reconnect']) {
+         console.log(`[INFO] Reconnecting in ${config.utils['auto-recconect-delay'] / 1000} seconds...`);
+         setTimeout(() => {
+            createBot();
+         }, config.utils['auto-recconect-delay']);
+      }
+   });
+
+   client.on('spawn', () => {
+      console.log('\x1b[32m[HailGames Afk Bot] Bot spawned in the world!\x1b[0m');
+   });
+
+   client.on('kick', (reason) => {
+      isSpawned = false;
+      
+      if (messageTimer) clearInterval(messageTimer);
+      if (antiAFKTimer) clearInterval(antiAFKTimer);
+      
       console.log(
          '\x1b[33m',
-         `[AfkBot] Bot was kicked from the server. Reason: \n${reason}`,
+         `[HailGames Afk Bot] Bot was kicked from the server. Reason: ${reason}`,
          '\x1b[0m'
-      )
-   );
-
-   bot.on('error', (err) =>
-      console.log(`\x1b[31m[ERROR] ${err.message}`, '\x1b[0m')
-   );
+      );
+   });
 }
 
 createBot();

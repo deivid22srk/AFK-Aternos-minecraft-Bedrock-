@@ -1,45 +1,157 @@
-# Afk Bot
-<p align="center"> 
-    <img src="https://img.shields.io/github/issues/urfate/afk-bot">
-    <img src="https://img.shields.io/github/forks/urfate/afk-bot">
-    <img src="https://img.shields.io/github/stars/urfate/afk-bot">
-    <img src="https://img.shields.io/github/license/urfate/afk-bot">
+# HailGames Afk Bot
+
+<p align="center">
+    🎮 Bot AFK funcional para servidores Minecraft Bedrock Edition
 </p>
 
 <p align="center">
-    Functional minecraft AFK bot for servers
+    Anti-AFK, Auto-Auth, Suporte para contas offline/online
 </p>
 
-<p align="center">
-    Anti-AFK, Auto-Auth, Microsoft/Offline accounts support.
-</p>
+## 📋 Sobre
 
-## Tutorial
+HailGames Afk Bot é um bot especializado para manter seu personagem ativo em servidores Minecraft Bedrock Edition. Perfeito para servidores Aternos e outros que exigem jogadores online.
 
-1. Please Watch This Quick 3 Minute Video [HERE](https://www.youtube.com/watch?v=92khf57AfpE) And Consider Subscribing.
-2. For Any Questions Please Join My Discord Server And Create a Ticket. [HERE](https://discord.gg/MgfBNqxSA9)
-3. Fork The Code by pressing on the top Right.
-4. Like the Code So I can Keep Updating it!
+## ⚙️ Configuração
 
-## Installation
+### Pré-requisitos
 
- 1. [Download](https://github.com/urFate/Afk-Bot/tags) the latest package.
- 2. Download & install [Node.JS](https://nodejs.org/en/download/)
- 3. Run `npm install` command in bot directory.
- 
- ## Usage
- 
- 1. Configure bot in `settings.json` file. [Bot configuration is explained in our wiki](https://urfate.gitbook.io/afk-bot/bot-configuration)
- 2. Start bot with `node .` command.
+1. [Download](https://nodejs.org/en/download/) e instale o Node.JS
+2. Clone ou extraia este projeto
 
-## Features
+### Instalação
 
- - Anti-AFK Kick Module
- - Move to target block after join
- - Mojang/Microsoft Account support
- - Chat log
- - Chat messages Module
- - Auto reconnect
- - Authentication with Login Security [HERE](https://aternos.org/addons/a/spigot/19362) (Authentication Plugin For Cracked Servers)
- - Supported server versions: `1.8 - 1.21.3`
+1. Abra o terminal/CMD na pasta do bot
+2. Execute o comando: `npm install`
 
+### Configuração
+
+Edite o arquivo `settings.json` com suas configurações:
+
+```json
+{
+  "bot-account": {
+    "username": "HailGamesBot",  // Nome do bot
+    "password": "",              // Deixe vazio para offline
+    "type": "offline"            // "offline" ou "microsoft"
+  },
+
+  "server": {
+    "ip": "FizAnal.aternos.me",  // IP do servidor
+    "port": 19132,               // Porta Bedrock (padrão: 19132)
+    "version": "1.21.50"         // Versão do Minecraft
+  },
+  
+  "position": {
+    "enabled": false,            // Mover para posição específica
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+
+  "utils": {
+    "auto-auth": {
+      "enabled": false,          // Auto login (se servidor tiver)
+      "password": ""
+    },
+
+    "anti-afk": {
+      "enabled": true,           // Anti-AFK (pular/agachar)
+      "sneak": true              // Agachar enquanto pula
+    },
+
+    "chat-messages": {
+      "enabled": true,           // Enviar mensagens no chat
+      "repeat": true,            // Repetir mensagens
+      "repeat-delay": 60,        // Delay entre mensagens (segundos)
+
+      "messages": [
+        "HailGames Afk Bot",
+        "Keeping server active!",
+        "Bedrock Edition Bot"
+      ]
+    },
+
+    "chat-log": true,            // Mostrar chat no console
+    "auto-reconnect": true,      // Reconectar se desconectar
+    "auto-recconect-delay": 5000 // Delay para reconectar (ms)
+  }
+}
+```
+
+## 🚀 Iniciar o Bot
+
+Execute o comando:
+
+```bash
+node index.js
+```
+
+ou
+
+```bash
+npm start
+```
+
+O bot irá:
+- ✅ Conectar ao servidor
+- ✅ Enviar mensagens automáticas
+- ✅ Realizar ações anti-AFK
+- ✅ Reconectar automaticamente se desconectar
+
+## 🎯 Recursos
+
+- ✅ **Anti-AFK**: Pula e agacha automaticamente
+- ✅ **Mensagens no Chat**: Envia mensagens personalizadas
+- ✅ **Auto-Reconexão**: Reconecta automaticamente
+- ✅ **Auto-Auth**: Suporte para login automático
+- ✅ **Chat Log**: Visualize mensagens do servidor
+- ✅ **Suporte Bedrock**: Versões 1.16 até 1.21+
+- ✅ **Servidor Web**: Interface básica na porta 8000
+
+## 📦 Estrutura de Arquivos
+
+```
+HailGames-Afk-Bot/
+├── index.js              # Código principal do bot
+├── settings.json         # Configurações
+├── package.json          # Dependências
+├── README.md            # Documentação
+└── launcher_accounts.json # Contas (opcional)
+```
+
+## 🔧 Solução de Problemas
+
+### Bot não conecta
+- Verifique se o IP e porta estão corretos
+- Confirme se o servidor está online
+- Para Aternos, use o endereço completo (ex: `server.aternos.me`)
+- Porta padrão Bedrock: 19132
+
+### Erro de versão
+- Atualize `bedrock-protocol`: `npm update bedrock-protocol`
+- Verifique a versão do servidor e ajuste em `settings.json`
+
+### Bot desconecta
+- Ative `auto-reconnect` em `settings.json`
+- Ajuste o `auto-recconect-delay` se necessário
+
+## 📝 Notas
+
+- **Bedrock Edition**: Este bot funciona apenas com Minecraft Bedrock (Windows 10, Mobile, Console, etc.)
+- **Java Edition**: Para Java Edition, use o bot original com `mineflayer`
+- **Contas Offline**: Funcionam na maioria dos servidores Bedrock
+- **Microsoft Account**: Configure `"type": "microsoft"` e adicione credenciais
+
+## 📄 Licença
+
+MIT License - Sinta-se livre para usar e modificar
+
+## 🎮 Versões Suportadas
+
+- Minecraft Bedrock: 1.16.x - 1.21.x
+- Testado em: Aternos, Realms, Servidores Dedicados
+
+---
+
+**HailGames Afk Bot** - Mantendo seus servidores sempre ativos! 🚀

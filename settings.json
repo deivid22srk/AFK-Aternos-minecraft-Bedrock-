@@ -1,14 +1,14 @@
 {
   "bot-account": {
-    "username": "AFKBot", 
+    "username": "HailGamesBot", 
     "password": "",
-    "type": "mojang"
+    "type": "offline"
   },
 
   "server": {
     "ip": "FizAnal.aternos.me", 
-    "port": 45203,   
-    "version": "1.21.120.4"   
+    "port": 19132,   
+    "version": "1.21.50"   
   },
   
   "position": {
@@ -35,9 +35,9 @@
       "repeat-delay": 60,
 
       "messages": [
-        "I'm a regular player",
-        "Subscibe To Slobos!",
-        "I Like to Play Minecraft!"
+        "HailGames Afk Bot",
+        "Keeping server active!",
+        "Bedrock Edition Bot"
       ]
     },
 
